@@ -1,56 +1,80 @@
+import datetime
+
+from django.utils import timezone
 from rest_framework import generics, status, viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from django.db.models import Q, Count
 
 from permissions import IsOwner
+from tasks.paginators import TaskPaginator
 from users.models import User
 from users.serializers import UserSerializer
 from tasks.models import Task
-from tasks.serializers import TaskSerializer
+from tasks.serializers import TaskSerializer, ImportantTaskSerializer
 
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    pagination_class = TaskPaginator
+
 
     def perform_create(self, serializer):
         new_task = serializer.save()
-        new_task.owner = self.request.user
+        new_task.creator = self.request.user
         new_task.save()
+
+    def check_and_update_task_status(self, task):
+        if task.status not in ['d', 'f'] and task.deadline < timezone.now().date():
+            task.status = 'f'
+            task.save()
+            return True
+        else:
+            return True
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializers = []
+        for task in queryset:
+            if self.check_and_update_task_status(task):
+                serializer = self.get_serializer(task)
+                serializers.append(serializer.data)
+        return Response(serializers)
+
+    def perform_update(self, serializer):
+        task = serializer.save()
+        if task.status == 'n' and task.executor is not None:
+            task.status = 't'
+            task.save()
 
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [IsAuthenticated]
+        elif self.action == 'retrieve':
+            permission_classes = [IsAuthenticated, IsOwner | IsAdminUser]
         elif self.action == 'destroy':
-            permission_classes = [IsAuthenticated & (IsAdminUser or IsOwner)]
+            permission_classes = [IsAuthenticated, IsAdminUser]
+        elif self.action == 'update':
+            permission_classes = [IsAuthenticated, IsOwner | IsAdminUser]
+        else:
+            permission_classes = [IsAuthenticated | IsAdminUser]
+        return [permission() for permission in permission_classes]
 
 
 class ImportantTasks(generics.ListAPIView):
-    serializer_class = TaskSerializer
+    serializer_class = ImportantTaskSerializer
 
     def get_queryset(self):
-        queryset = Task.objects.filter(Q(parent_task__isnull=True) & Q(User__isnull=True)).annotate(
-            dependent_tasks=Count('task')
-        ).filter(dependent_tasks__gt=0)
+        queryset = Task.objects.filter(status='n', parent_task__isnull=False, executor__isnull=True, parent_task__status__in=['n', 't'])
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        least_loaded_User = User.objects.annotate(task_count=Count('task')).order_by('task_count')[0]
-        for task in serializer.data:
-            users = User.objects.filter(Q(task__parent_task=task.parent_task) | Q(task=task.parent_task))
-            if len(users) == 1 and users[0] != task.User:
-                task['User'] = UserSerializer(users[0]).data
-            elif task.User is None and len(users) < 3 and \
-                    User.objects.exclude(id=task.User.id).aggregate(task_count=Count('task'))[
-                        'task_count'] <= least_loaded_User.task_count + 2:
-                task['User'] = UserSerializer(users[0]).data
-        return Response(serializer.data)
+    # def get_queryset(self):
+    #     tasks = Task.objects.filter(~Q(status='started') & Q(parent_task__isnull=False))
+    #     executors = User.objects.annotate(task_count=Count('tasks')).order_by('task_count')
+    #     least_busy_executor = executors.first()
+    #     if least_busy_executor.task_count > 2:
+    #         parent_task_executor = Task.objects.filter(parent_task__in=tasks).first().executor
+    #         return [{'task': task.name, 'deadline': task.deadline, 'employee': parent_task_executor} for task in tasks]
+    #     else:
+    #         return [{'task': task.name, 'deadline': task.deadline, 'employee': least_busy_executor} for task in tasks]

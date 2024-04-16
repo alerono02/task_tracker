@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 
@@ -7,6 +8,6 @@ class TaskValidator:
         self.field = field
 
     def __call__(self, value):
-        parent_task = dict(value).get(self.field)
-        if parent_task and parent_task.status != 'c':
-            raise serializers.ValidationError(f'Task {parent_task.name} is not completed yet')
+        deadline = dict(value).get(self.field)
+        if deadline <= timezone.now().date():
+            raise serializers.ValidationError('Deadline cannot set earlier than tomorrow!')

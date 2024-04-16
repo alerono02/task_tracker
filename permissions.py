@@ -11,9 +11,9 @@ class IsOwner(BasePermission):
         Attributes:
             message (str): Сообщение об ошибке, которое будет возвращено при отсутствии доступа.
     """
-    message = "Вы не являетесь владельцем."
+    message = "Вы не являетесь создателем."
 
     def has_object_permission(self, request, view, obj):
-        if request.user == obj.owner:
+        if request.user == obj.creator:
             return True
         return False

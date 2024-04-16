@@ -13,14 +13,13 @@ fake = Faker()
 
 class Command(BaseCommand):
     """
-        Команда для сброса и добавления тестовых данных в модель Payment.
+        Команда для сброса и добавления тестовых данных в модель Task и User.
 
         Метод `handle` выполняет следующие шаги:
         1. Удаляет все записи в моделях Payment, Lesson, Course и User.
         2. Создает супер пользователя
-        3. Создает 5 пользователей и сохраняет их в список.
-        4. Создает 5 курсов и для каждого курса создает 3 урока.
-        5. Создает 20 случайных платежей, связанных с пользователями, курсами и уроками.
+        3. Создает 7 пользователей и сохраняет их в список.
+        4. Создает 20 задач.
 
         Attributes:
             help (str): Описание команды для вывода при запуске `python manage.py help`.
@@ -43,6 +42,7 @@ class Command(BaseCommand):
 
         user.set_password('qwe123rt45')
         user.save()
+        print('Create superuser')
 
         users = []
         for _ in range(7):
@@ -56,30 +56,18 @@ class Command(BaseCommand):
             user.set_password('qwe123rt45')
             user.save()
             users.append(user)
+        print('Add users')
 
         tasks = []
         for i in range(20):
             task = Task.objects.create(
-                name=fake.word(),
+                name=fake.name(),
                 description=fake.text(),
                 creator=random.choice(users),
+                status=random.choice(['n', 't', 'f', 'd']),
+                deadline=fake.date_this_year(before_today=True, after_today=True),
+                parent_task=random.choice(tasks) if random.choice([True, False]) and tasks != []
+                else None,
             )
-            courses.append(course)
-
-
-        for _ in range(20):
-            user = random.choice(users)
-            payment_date = fake.date_between(start_date='-30d', end_date='today')
-            payment_method = random.choice([1, 2])
-            is_course = random.choice([True, False])
-            amount = Decimal(random.uniform(1000, 3000))
-            course_or_lesson = random.choice(courses) if is_course else random.choice(lessons)
-
-            Payment.objects.create(
-                user=user,
-                date=payment_date,
-                course=course_or_lesson if is_course else None,
-                lesson=course_or_lesson if not is_course else None,
-                price=amount,
-                payment_method=payment_method,
-            )
+            tasks.append(task)
+        print('Add tasks')

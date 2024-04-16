@@ -25,11 +25,11 @@ class Task(models.Model):
     description = models.TextField(max_length=1000, verbose_name='Task description')
     parent_task = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Parent task')
     executor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Executor',
-                                 related_name='Executor')
+                                 related_name='tasks')
     deadline = models.DateField(verbose_name='Deadline')
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='n', verbose_name='Status')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name='Creator',
-                                related_name='Creator')
+                                related_name='creator')
     created_at = models.DateField(auto_now_add=True, verbose_name='Created at')
     updated_at = models.DateField(auto_now=True, verbose_name='Updated at')
 

@@ -10,5 +10,5 @@ router = DefaultRouter()
 router.register(r'tasks', TaskViewSet)
 
 urlpatterns = [
-    path('tasks/important', ImportantTasks.as_view(), name='important_tasks'),
+    path('tasks/important/', ImportantTasks.as_view(), name='important_tasks'),
 ] + router.urls

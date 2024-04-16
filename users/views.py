@@ -1,5 +1,5 @@
 from django.db.models import Count
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 from permissions import IsOwner
@@ -17,6 +17,7 @@ class UserListAPIView(generics.ListAPIView):
     serializer_class = UserSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, IsAdminUser]
+    ordering = ('-count_tasks',)
 
 
 class UserRetrieveAPIView(generics.RetrieveAPIView):
@@ -37,9 +38,9 @@ class UserDestroyAPIView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated & IsAdminUser]
 
 
-class BusyUsers(generics.ListAPIView):
-    serializer_class = UserSerializer
-
-    def get_queryset(self):
-        queryset = User.objects.annotate(task_count=Count('task')).order_by('-task_count')
-        return queryset
+# class BusyUsers(generics.ListAPIView):
+#     serializer_class = BusyUserSerializer
+#
+#     def get_queryset(self):
+#         queryset = User.objects.annotate(task_count=Count('tasks')).order_by('-task_count')
+#         return queryset
