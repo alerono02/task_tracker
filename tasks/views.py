@@ -1,24 +1,23 @@
-import datetime
 
+
+from django.http import Http404
 from django.utils import timezone
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from django.db.models import Q, Count
+from rest_framework.views import APIView
 
 from permissions import IsOwner
 from tasks.paginators import TaskPaginator
-from users.models import User
-from users.serializers import UserSerializer
 from tasks.models import Task
 from tasks.serializers import TaskSerializer, ImportantTaskSerializer
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """ViewSet for TASKS"""
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     pagination_class = TaskPaginator
-
 
     def perform_create(self, serializer):
         new_task = serializer.save()
@@ -63,18 +62,67 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class ImportantTasks(generics.ListAPIView):
+    """
+    View for getting important tasks
+    Important tasks are have some params:
+    1. not finished or failed tasks
+    2. have parent task, which aren't finished or failed
+    3. have no executor
+    """
     serializer_class = ImportantTaskSerializer
 
     def get_queryset(self):
-        queryset = Task.objects.filter(status='n', parent_task__isnull=False, executor__isnull=True, parent_task__status__in=['n', 't'])
+        queryset = Task.objects.filter(status='n', parent_task__isnull=False, executor__isnull=True,
+                                       parent_task__status__in=['n', 't'])
         return queryset
 
-    # def get_queryset(self):
-    #     tasks = Task.objects.filter(~Q(status='started') & Q(parent_task__isnull=False))
-    #     executors = User.objects.annotate(task_count=Count('tasks')).order_by('task_count')
-    #     least_busy_executor = executors.first()
-    #     if least_busy_executor.task_count > 2:
-    #         parent_task_executor = Task.objects.filter(parent_task__in=tasks).first().executor
-    #         return [{'task': task.name, 'deadline': task.deadline, 'employee': parent_task_executor} for task in tasks]
+
+class TaskTakeView(APIView):
+    """
+    View for taking tasks
+    in url you need write '../take/<id of your task>'
+    use POST method
+    """
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    # def get_object(self, *args, **kwargs):
+    #     if self.request.user.is_authenticated():
+    #         try:
+    #             task = Task.objects.get(creator=self.request.user)
+    #         except:
+    #             task = None
+    #
+    #         if task is None:
+    #             HttpResponseRedirect(reverse("task"))
+    #
     #     else:
-    #         return [{'task': task.name, 'deadline': task.deadline, 'employee': least_busy_executor} for task in tasks]
+    #         task_id = self.request.session.get("task_id")
+    #         if task_id is None:
+    #             HttpResponseRedirect(reverse("task"))
+    #
+    #         task = Task.objects.get(id=task_id)
+    #
+    #     return task
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        task_id = self.kwargs.get('id')
+
+        if task_id is None:
+            return Response({"message": "Отсутствует идентификатор задачи в запросе"}, status=400)
+        # self.kwargs.get('id')
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            raise Http404("Задача с таким идентификатором не найдена")
+
+        task = Task.objects.get(id=task_id)
+        if task.executor is None:
+            Task.objects.filter(id=task_id).update(executor=user)
+            return Response({"message": "Вы успешно взяли на задачу"}, status=200)
+        elif task.executor == user:
+            return Response({"message": "Вы уже взяли эту задачу"}, status=400)
+        else:
+            return Response({"message": f"Вы не можете взять задачу. Её выполняет {task.executor}"}, status=400)
