@@ -15,6 +15,7 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = '__all__'
         validators = [TaskValidator(field='deadline')]
+        order_by = ['id']
 
 
 class ImportantTaskSerializer(serializers.ModelSerializer):

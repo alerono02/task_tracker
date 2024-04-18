@@ -13,10 +13,11 @@ class UserCreate(generics.CreateAPIView):
 
 
 class UserListAPIView(generics.ListAPIView):
-    """View for USER CREATE"""
+    """View for USER LIST orders by count of tasks"""
     serializer_class = UserSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, IsAdminUser]
+    ordering = ['-count_tasks']
 
 
 class UserRetrieveAPIView(generics.RetrieveAPIView):

@@ -112,17 +112,20 @@ class TaskTakeView(APIView):
 
         if task_id is None:
             return Response({"message": "Отсутствует идентификатор задачи в запросе"}, status=400)
-        # self.kwargs.get('id')
         try:
             task = Task.objects.get(id=task_id)
         except Task.DoesNotExist:
             raise Http404("Задача с таким идентификатором не найдена")
 
-        task = Task.objects.get(id=task_id)
-        if task.executor is None:
-            Task.objects.filter(id=task_id).update(executor=user)
+        if task.executor is None and task.status == 'n':
+            task.executor = user
+            task.status = 't'
+            task.save()
+            print(task)
             return Response({"message": "Вы успешно взяли на задачу"}, status=200)
         elif task.executor == user:
             return Response({"message": "Вы уже взяли эту задачу"}, status=400)
+        elif task.status != 'n':
+            return Response({"message": "Задача не может быть взята в работу"}, status=400)
         else:
             return Response({"message": f"Вы не можете взять задачу. Её выполняет {task.executor}"}, status=400)
