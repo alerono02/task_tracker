@@ -64,8 +64,8 @@ class Command(BaseCommand):
                 name=fake.name(),
                 description=fake.text(),
                 creator=random.choice(users),
-                status=random.choice(['n', 't', 'f', 'd']),
-                deadline=fake.date_this_year(before_today=True, after_today=True),
+                status=random.choice(['n', 't']),
+                deadline=fake.date_this_year(after_today=True),
                 parent_task=random.choice(tasks) if random.choice([True, False]) and tasks != []
                 else None,
             )
