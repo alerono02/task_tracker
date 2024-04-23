@@ -61,7 +61,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 class ImportantTasks(generics.ListAPIView):
     """
-    View for getting important tasks
+    View for getting important tasks.
     Important tasks are have some params:
     1. not finished or failed tasks
     2. have parent task, which aren't finished or failed
@@ -127,3 +127,35 @@ class TaskTakeView(APIView):
             return Response({"message": "Задача не может быть взята в работу"}, status=400)
         else:
             return Response({"message": f"Вы не можете взять задачу. Её выполняет {task.executor}"}, status=400)
+
+
+class TaskDoneView(APIView):
+    """
+    View for set done status for your task
+    in url you need write '../take/<id of your task>'
+    use POST method
+    """
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        task_id = self.kwargs.get('id')
+
+        if task_id is None:
+            return Response({"message": "Отсутствует идентификатор задачи в запросе"}, status=400)
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            raise Http404("Задача с таким идентификатором не найдена")
+
+        if task.executor == user and task.status == 't':
+            task.status = 'd'
+            task.save()
+            print(task)
+            return Response({"message": "Вы успешно закрыли задачу"}, status=200)
+        elif task.executor != user :
+            return Response({"message": f"Вы не можете закрыть данную задачу. {task}"}, status=400)
+        else:
+            return Response({"message": "Задача уже выполнена"}, status=400)

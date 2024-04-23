@@ -22,4 +22,4 @@ class UserSerializer(serializers.ModelSerializer):
 #
 #     class Meta:
 #         model = User
-#         fields = ('id', 'first_name', 'last_name', 'patronymic', 'email', 'count_tasks',)
+#         fields = ('id', 'first_name', 'last_name', 'patronymic', 'email', 'count_tasks')
