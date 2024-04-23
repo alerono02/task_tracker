@@ -22,12 +22,8 @@
 - Django DRF
 - PostgreSQL
 - JWT
-- django_filters
-- Redis
-- Celery
-- Celery Beat
 - Swagger
-
+- drf-yasg
 
 
 ---
