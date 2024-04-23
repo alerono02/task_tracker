@@ -21,6 +21,7 @@ class IsOwner(BasePermission):
 
 class IsItMe(BasePermission):
     message = "It's not your account!!"
+
     def has_object_permission(self, request, view, obj):
         if request.user == obj:
             return True

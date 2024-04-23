@@ -1,4 +1,3 @@
-import os
 
 from django.core.management.base import BaseCommand
 
@@ -6,7 +5,6 @@ from users.models import User
 from tasks.models import Task
 from faker import Faker
 import random
-from decimal import Decimal
 
 fake = Faker()
 

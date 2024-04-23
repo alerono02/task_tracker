@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
-from permissions import IsOwner, IsItMe
+from permissions import IsItMe
 from users.models import User
 from users.serializers import UserSerializer
 
