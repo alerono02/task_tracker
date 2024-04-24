@@ -12,7 +12,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'count_tasks', 'first_name', 'last_name', 'patronymic', 'email', 'position', 'city', 'phone',)
+        fields = ['id', "count_tasks", 'email', 'password', 'first_name', 'last_name', 'avatar', 'phone', 'city']
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def create(self, validated_data):
+        user = User(email=validated_data["email"])
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
+
 
 # class BusyUserSerializer(serializers.ModelSerializer):
 #     count_tasks = serializers.SerializerMethodField()

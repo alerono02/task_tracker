@@ -29,7 +29,7 @@ class Task(models.Model):
     deadline = models.DateField(verbose_name='Deadline')
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='n', verbose_name='Status')
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name='Creator',
-                                related_name='creator')
+                                related_name='creator', null=True, blank=True)
     created_at = models.DateField(auto_now_add=True, verbose_name='Created at')
     updated_at = models.DateField(auto_now=True, verbose_name='Updated at')
 

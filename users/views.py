@@ -16,7 +16,7 @@ class UserListAPIView(generics.ListAPIView):
     """View for USER LIST orders by count of tasks"""
     serializer_class = UserSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
     ordering = ['-count_tasks']
 
 

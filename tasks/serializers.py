@@ -9,7 +9,6 @@ from users.serializers import UserSerializer
 
 class TaskSerializer(serializers.ModelSerializer):
     executor = UserSerializer(read_only=True)
-    creator = UserSerializer(read_only=True)
 
     class Meta:
         model = Task

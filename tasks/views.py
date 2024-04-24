@@ -19,7 +19,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         new_task = serializer.save()
-        new_task.creator = self.request.user
+        new_task.creator_id = self.request.user.id
         new_task.save()
 
     def check_and_update_task_status(self, task):

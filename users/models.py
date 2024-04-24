@@ -13,6 +13,7 @@ class User(AbstractUser):
     position = models.CharField(max_length=100, verbose_name='position', **NULLABLE)
     city = models.CharField(max_length=100, verbose_name='city', **NULLABLE)
     avatar = models.ImageField(upload_to='users', verbose_name='profile photo', **NULLABLE)
+    is_active = models.BooleanField(default=True, verbose_name='is active', **NULLABLE)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
